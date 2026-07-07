@@ -8,10 +8,10 @@
   "homepage": "https://draftlytic.com?utm_source=github&utm_medium=mcp-package",
   "repository": {
     "type": "git",
-    "url": "https://github.com/robertboylan/draftlytic-mcp.git"
+    "url": "https://github.com/rbsoftwaresystems/draftlytic-mcp.git"
   },
   "bugs": {
-    "url": "https://github.com/robertboylan/draftlytic-mcp/issues"
+    "url": "https://github.com/rbsoftwaresystems/draftlytic-mcp/issues"
   },
   "keywords": [
     "mcp",
