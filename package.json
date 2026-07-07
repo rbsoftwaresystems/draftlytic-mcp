@@ -1,0 +1,47 @@
+{
+  "name": "draftlytic-mcp",
+  "version": "0.2.0",
+  "description": "MCP server for planning software specs (PRDs) offline, in your editor — validate, render, and checklist tools for Claude Code, Cursor, and any MCP client.",
+  "type": "module",
+  "license": "MIT",
+  "author": "Robert Boylan",
+  "homepage": "https://draftlytic.com?utm_source=github&utm_medium=mcp-package",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/robertboylan/draftlytic-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/robertboylan/draftlytic-mcp/issues"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "prd",
+    "spec",
+    "product-requirements",
+    "claude",
+    "cursor",
+    "ai-coding"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "draftlytic-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "smoke": "npm run build && node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.3"
+  }
+}
