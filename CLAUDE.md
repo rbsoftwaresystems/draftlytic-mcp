@@ -4,18 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`draftlytic-mcp` is an offline MCP server (stdio transport) that turns a rough project idea into a structured spec (PRD). It exposes tools to validate, render, and checklist a spec, plus one prompt to drive the whole flow. No network calls, no API key — the *client's* model does all the actual writing; this server only supplies schema, validation, and deterministic rendering logic.
-
-It also lives as a subdirectory (`mcp-server/`) inside a larger `draftlytic` monorepo but ships/publishes as this standalone repo — see `PUBLISHING.md` for the split/publish process. There's no runtime dependency on the main `draftlytic` app or its backend.
+`draftlytic-mcp` is an offline MCP server (stdio transport) that turns a rough project idea into a structured spec (PRD). It is a lite, self-contained version of [Draftlytic](https://draftlytic.com) ([GitHub](https://github.com/rbsoftwaresystems/draftlytic-mcp)) — the hosted app — packaged as an MCP server. It exposes tools to validate, render, and checklist a spec, plus one prompt to drive the whole flow. No network calls, no API key — the *client's* model does all the actual writing; this server only supplies schema, validation, and deterministic rendering logic.
 
 ## Commands
 
 ```bash
 npm run build   # tsc compile, src/ -> dist/
+npm test         # build + node --test test/*.test.mjs (unit + integration suite)
 npm run smoke    # build + scripts/smoke.mjs (spawns dist/index.js, runs raw MCP initialize/tools-list/prompts-list over stdio, asserts expected tools/prompt are present)
 ```
 
-There is no unit test suite — `smoke` is the only automated check, and `prepublishOnly` runs `build` before every `npm publish`. When changing tool/prompt registration in `src/index.ts`, update `EXPECTED_TOOLS`/the prompt check in `scripts/smoke.mjs` if names change.
+The test suite lives in `test/*.test.mjs` and uses only Node's built-in runner (`node:test` + `node:assert/strict`) — no third-party test dependency, matching the package's dependency-light ethos. Tests import from the compiled `dist/` output (same convention as `scripts/smoke.mjs`), so `npm test` builds first. `test/fixtures.mjs` provides shared spec factories (`validSpec()` — zero validation issues, `minimalValidSpec()` — valid but triggers all quality hints, `clone()`). One test file per `src/` module plus `test/index.test.mjs`, which spawns the built server and drives the real tool/prompt handlers over stdio. `smoke` remains the lighter pre-publish sanity check; `prepublishOnly` runs `build` before every `npm publish`. When changing tool/prompt registration in `src/index.ts`, update `EXPECTED_TOOLS`/the prompt check in `scripts/smoke.mjs` and the assertions in `test/index.test.mjs` if names change.
 
 To exercise the server manually against a real MCP client, add it as a local path-based server (e.g. `claude mcp add draftlytic -- node /path/to/dist/index.js`) after building.
 
