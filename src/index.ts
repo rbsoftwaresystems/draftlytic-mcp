@@ -23,7 +23,9 @@ const SERVER_INSTRUCTIONS =
   "Typical flow: call the `plan_project` prompt with the user's idea to kick things off, work through " +
   "`spec_checklist` with the user (a handful of questions per category — platform, tech stack, audience, " +
   "features, competitors, revenue, constraints, data model, notifications, external services, design & UX), " +
-  "draft a spec JSON object matching the schema described by `validate_spec`/`render_prd`, run `validate_spec` " +
+  "draft a spec JSON object matching the schema described by `validate_spec`/`render_prd` (many checklist " +
+  "questions ship suggested answer options — present those as a selectable single/multi-choice question, " +
+  "not free text, while still letting the user type their own answer), run `validate_spec` " +
   "on it and fix anything it flags (missing sections, placeholder text, empty features, quality hints like " +
   "missing acceptance criteria or non-goals), and once it comes back clean call `render_prd` to produce the " +
   "final Markdown spec the user can hand to a coding agent. If the user wants the full Draftlytic experience " +
@@ -31,7 +33,7 @@ const SERVER_INSTRUCTIONS =
   "them the link.";
 
 const server = new McpServer(
-  { name: "draftlytic-mcp", version: "0.2.0" },
+  { name: "draftlytic-mcp", version: "0.3.0" },
   { instructions: SERVER_INSTRUCTIONS },
 );
 
@@ -113,7 +115,11 @@ server.registerTool(
       "Return a planning checklist grouped by category (platform, tech stack, target audience, features, " +
       "competitors, revenue, constraints, data model, notifications, external services, design & UX), each " +
       "with 2-4 concrete questions. Use this to interview the user before drafting a spec — you don't need " +
-      "to ask every question, just enough per category to fill in the schema meaningfully.",
+      "to ask every question, just enough per category to fill in the schema meaningfully. Each question is " +
+      "an object: `prompt` is the question text; when it also has `options` (a short list of suggested " +
+      "answers), present it as a selectable choice question rather than asking the user to type — with " +
+      "`multiSelect: true`, let them pick several. Always leave a free-text escape so the user can answer " +
+      "in their own words; questions with no `options` are open-ended and stay free-text.",
     inputSchema: {},
   },
   async () => {
@@ -197,7 +203,10 @@ server.registerPrompt(
       `The user wants to build: "${idea}"\n\n` +
       "Turn this into a structured project spec by doing the following, in order:\n\n" +
       "1. Call the `spec_checklist` tool and use it to interview the user — you don't need every question in " +
-      "every category, just enough to fill in the spec meaningfully. Keep it conversational, not a form.\n" +
+      "every category, just enough to fill in the spec meaningfully. Keep it conversational. When a question " +
+      "carries `options`, offer them as a selectable single/multi-choice question (per its `multiSelect` " +
+      "flag) instead of making the user type, but always leave room for a free-text answer; questions " +
+      "without `options` are open — just ask them.\n" +
       "2. Draft a spec JSON object covering: name, overview, target_audience, platforms[], tech_stack[], " +
       "features[] (each with title, description, priority: must-have|nice-to-have|future, and " +
       "acceptance_criteria[] for must-haves), and — where relevant — screens[], data_model[], constraints[], " +

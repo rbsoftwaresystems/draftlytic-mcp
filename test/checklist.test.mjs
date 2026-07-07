@@ -70,24 +70,94 @@ describe("SPEC_CHECKLIST shape", () => {
     }
   });
 
-  test("every question is a non-empty string ending with '?'", () => {
+  test("every question is an object with a non-empty prompt ending in '?'", () => {
     for (const entry of SPEC_CHECKLIST) {
       for (const question of entry.questions) {
         assert.equal(
           typeof question,
+          "object",
+          `question in "${entry.category}" should be an object`,
+        );
+        assert.equal(
+          typeof question.prompt,
           "string",
-          `question in "${entry.category}" should be a string`,
+          `question.prompt in "${entry.category}" should be a string`,
         );
         assert.ok(
-          question.length > 0,
-          `question in "${entry.category}" should be non-empty`,
+          question.prompt.length > 0,
+          `question.prompt in "${entry.category}" should be non-empty`,
         );
         assert.ok(
-          question.endsWith("?"),
-          `question in "${entry.category}" should end with "?": ${JSON.stringify(question)}`,
+          question.prompt.endsWith("?"),
+          `question.prompt in "${entry.category}" should end with "?": ${JSON.stringify(question.prompt)}`,
         );
       }
     }
+  });
+
+  test("when options are present they are 1-4 unique, non-empty strings", () => {
+    for (const entry of SPEC_CHECKLIST) {
+      for (const question of entry.questions) {
+        if (question.options === undefined) continue;
+        assert.ok(
+          Array.isArray(question.options),
+          `options for "${question.prompt}" should be an array`,
+        );
+        assert.ok(
+          question.options.length >= 1 && question.options.length <= 4,
+          `options for "${question.prompt}" should have 1-4 items (client picker caps at 4), got ${question.options.length}`,
+        );
+        for (const option of question.options) {
+          assert.equal(
+            typeof option,
+            "string",
+            `option in "${question.prompt}" should be a string`,
+          );
+          assert.ok(
+            option.length > 0,
+            `option in "${question.prompt}" should be non-empty`,
+          );
+        }
+        assert.equal(
+          new Set(question.options).size,
+          question.options.length,
+          `options for "${question.prompt}" should be unique`,
+        );
+      }
+    }
+  });
+
+  test("multiSelect, when present, is a boolean and only on questions that have options", () => {
+    for (const entry of SPEC_CHECKLIST) {
+      for (const question of entry.questions) {
+        if (question.multiSelect === undefined) continue;
+        assert.equal(
+          typeof question.multiSelect,
+          "boolean",
+          `multiSelect for "${question.prompt}" should be a boolean`,
+        );
+        assert.ok(
+          Array.isArray(question.options),
+          `multiSelect on "${question.prompt}" is meaningless without options`,
+        );
+      }
+    }
+  });
+
+  test("the checklist exercises the full range: single-select, multi-select, and free-text questions", () => {
+    const all = SPEC_CHECKLIST.flatMap((c) => c.questions);
+    assert.ok(
+      all.some((q) => Array.isArray(q.options) && q.multiSelect !== true),
+      "expected at least one single-select question (options, multiSelect falsy)",
+    );
+    assert.ok(
+      all.some((q) => q.multiSelect === true),
+      "expected at least one multi-select question",
+    );
+    assert.ok(
+      all.some((q) => q.options === undefined),
+      "expected at least one free-text question (no options)",
+    );
   });
 });
 

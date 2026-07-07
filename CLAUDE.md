@@ -18,6 +18,20 @@ The test suite lives in `test/*.test.mjs` and uses only Node's built-in runner (
 
 To exercise the server manually against a real MCP client, add it as a local path-based server (e.g. `claude mcp add draftlytic -- node /path/to/dist/index.js`) after building.
 
+## Versioning
+
+Every change to shipped behavior must be reflected by a version bump in `package.json` — never merge a functional change on the released version number. Before editing, check whether the version has **already** been bumped on this branch relative to what's published (`npm view draftlytic-mcp version`, or `git log -p -- package.json` since the last release tag/commit). If it's already ahead, fold your change into that pending version — don't bump again. If it still matches the published version, bump it as part of your change.
+
+Keep the `McpServer` version string in `src/index.ts` **in sync** with `package.json` — they must always match. When you bump one, bump the other in the same change.
+
+How much to increment (semver, pre-1.0 — we're on `0.x`, so a `0.MINOR.PATCH` scheme where MINOR carries breaking changes):
+
+- **PATCH** (`0.2.0 → 0.2.1`) — backwards-compatible, no change to what a client sees: bug fixes, internal refactors, tests, README/docs, dependency bumps, and wording tweaks to tool/prompt descriptions that don't change the contract.
+- **MINOR** (`0.2.0 → 0.3.0`) — any change to the client-facing contract, whether additive or breaking (pre-1.0 lumps both here): new or renamed tool/prompt, a changed `SpecSchema` (add/remove/rename a field), a changed `spec_checklist` question shape or options, a changed `render_prd` output format, or new tool arguments. When in doubt between patch and minor, choose minor.
+- **MAJOR** (`→ 1.0.0`) — reserved for the first stable release; after that, breaking changes bump MAJOR. Don't bump to `1.0.0` without an explicit decision from the user.
+
+If a single change is both a fix and a contract change, the contract change wins — bump MINOR. Only ever bump one level per change unless the user says otherwise. This generalizes the `SpecSchema` rule below (a schema change is a MINOR bump).
+
 ## Architecture
 
 Everything is under `src/`, one concern per file, wired together in `src/index.ts`:
