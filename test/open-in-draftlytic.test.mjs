@@ -113,8 +113,19 @@ describe("buildIdeaBrief", () => {
   });
 
   test("revenue_model only -> brief is the revenue sentence", () => {
-    const brief = buildIdeaBrief({ revenue_model: "Freemium." });
-    assert.equal(brief, "Revenue: Freemium..");
+    const brief = buildIdeaBrief({ revenue_model: "Freemium" });
+    assert.equal(brief, "Revenue: Freemium.");
+  });
+
+  test("a value already ending in a period does not produce a double period", () => {
+    assert.equal(
+      buildIdeaBrief({ revenue_model: "Freemium." }),
+      "Revenue: Freemium.",
+    );
+    assert.equal(
+      buildIdeaBrief({ target_audience: "Gym-goers without much time." }),
+      "For: Gym-goers without much time.",
+    );
   });
 
   test("empty object -> null (no parts at all)", () => {

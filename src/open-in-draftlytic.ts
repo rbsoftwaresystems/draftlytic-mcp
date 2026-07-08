@@ -21,6 +21,15 @@ function truncate(text: string, max: number): string {
 }
 
 /**
+ * End a brief fragment with exactly one period. Free-text fields
+ * (target_audience, revenue_model) often already end in sentence punctuation,
+ * so appending `.` unconditionally produced doubles like "…friction..".
+ */
+function endSentence(text: string): string {
+  return text.replace(/[.!?…\s]+$/, "") + ".";
+}
+
+/**
  * Compress a spec (possibly partial) into a one-paragraph idea brief the
  * Draftlytic question flow can start from. Falls back gracefully: any subset
  * of name/overview/audience/platforms/features contributes what it has.
@@ -38,17 +47,18 @@ export function buildIdeaBrief(specInput: unknown): string | null {
   } else if (spec.name) {
     parts.push(spec.name);
   }
-  if (spec.target_audience) parts.push(`For: ${spec.target_audience}.`);
+  if (spec.target_audience)
+    parts.push(`For: ${endSentence(spec.target_audience)}`);
   if (spec.platforms && spec.platforms.length > 0) {
-    parts.push(`Platforms: ${spec.platforms.join(", ")}.`);
+    parts.push(`Platforms: ${endSentence(spec.platforms.join(", "))}`);
   }
   const mustHaves = (spec.features ?? [])
     .filter((f) => f.priority === "must-have")
     .map((f) => f.title);
   if (mustHaves.length > 0) {
-    parts.push(`Must-have features: ${mustHaves.join(", ")}.`);
+    parts.push(`Must-have features: ${endSentence(mustHaves.join(", "))}`);
   }
-  if (spec.revenue_model) parts.push(`Revenue: ${spec.revenue_model}.`);
+  if (spec.revenue_model) parts.push(`Revenue: ${endSentence(spec.revenue_model)}`);
 
   const brief = parts.join(" ").trim();
   return brief ? truncate(brief, MAX_BRIEF_LENGTH) : null;

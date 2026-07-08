@@ -173,6 +173,30 @@ describe("draftlytic-mcp stdio integration", () => {
     ]);
   });
 
+  // Regression guard: the object-typed `spec` param must advertise
+  // `type: "object"` in its JSON schema. A typeless param (the old
+  // `z.unknown()`) led MCP clients to serialize the spec as a JSON *string*,
+  // which broke every downstream parse.
+  test("tools/list: spec params advertise type:object so clients don't stringify", async () => {
+    const res = await rawRequest("tools/list", {});
+    const byName = Object.fromEntries(
+      (res.result.tools ?? []).map((t) => [t.name, t]),
+    );
+
+    for (const name of ["validate_spec", "render_prd"]) {
+      const specSchema = byName[name].inputSchema.properties.spec;
+      assert.equal(specSchema.type, "object", `${name}.spec must be type:object`);
+      assert.ok(
+        (byName[name].inputSchema.required ?? []).includes("spec"),
+        `${name}.spec must be required`,
+      );
+    }
+
+    // open_in_draftlytic.spec is optional but must still be typed as an object.
+    const openSpec = byName.open_in_draftlytic.inputSchema.properties.spec;
+    assert.equal(openSpec.type, "object");
+  });
+
   test("prompts/list includes plan_project", async () => {
     const res = await rawRequest("prompts/list", {});
     assert.equal(res.error, undefined);

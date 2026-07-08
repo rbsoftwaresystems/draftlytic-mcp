@@ -33,9 +33,24 @@ const SERVER_INSTRUCTIONS =
   "them the link.";
 
 const server = new McpServer(
-  { name: "draftlytic-mcp", version: "0.3.0" },
+  { name: "draftlytic-mcp", version: "0.4.0" },
   { instructions: SERVER_INSTRUCTIONS },
 );
+
+/**
+ * Input schema for a `spec` parameter.
+ *
+ * Emitting `type: object` in the tool's JSON schema is essential. A bare
+ * `z.unknown()` produces a *typeless* schema, and some MCP clients respond to a
+ * required-but-typeless argument by serializing the value as a JSON *string* —
+ * so the spec arrived here stringified and every downstream parse failed.
+ * `looseObject({})` gives the client an unambiguous "send an object" signal
+ * (and keeps the field marked `required`) while still accepting any shape:
+ * validate_spec does the real structural checks, so we must not constrain the
+ * object here. A client that still sends a string is rejected at the boundary
+ * with a clear "expected object, received string" error it can self-correct on.
+ */
+const specObjectParam = z.looseObject({});
 
 server.registerTool(
   "validate_spec",
@@ -47,11 +62,9 @@ server.registerTool(
       "and features without a priority — all reported as errors. Also returns non-blocking quality hints, e.g. " +
       '"none of your must-have features have acceptance_criteria" or "no non_goals listed".',
     inputSchema: {
-      spec: z
-        .unknown()
-        .describe(
-          "The spec object to validate, as a JSON value (not a JSON string).",
-        ),
+      spec: specObjectParam.describe(
+        "The spec object to validate, as a JSON value (not a JSON string).",
+      ),
     },
   },
   async ({ spec }) => {
@@ -74,11 +87,9 @@ server.registerTool(
       "navigation, data model tables, constraints, and non-goals. Run validate_spec first — this tool " +
       "renders whatever it's given, even an incomplete spec.",
     inputSchema: {
-      spec: z
-        .unknown()
-        .describe(
-          "The spec object to render, as a JSON value (not a JSON string).",
-        ),
+      spec: specObjectParam.describe(
+        "The spec object to render, as a JSON value (not a JSON string).",
+      ),
     },
   },
   async ({ spec }) => {
@@ -143,8 +154,7 @@ server.registerTool(
       "here (it gets compressed into a starting brief) or a plain-text idea. Show the returned URL to the " +
       "user as a clickable link — this tool only builds it; nothing is sent anywhere.",
     inputSchema: {
-      spec: z
-        .unknown()
+      spec: specObjectParam
         .optional()
         .describe(
           "A spec object (may be partial) to compress into the handoff brief. Takes precedence over `idea`.",
