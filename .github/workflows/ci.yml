@@ -57,13 +57,15 @@ jobs:
           echo "Version bumped: $BASE -> $PR"
 
   publish:
-    name: Publish to npm
+    name: Publish to npm + MCP Registry
     needs: test
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      id-token: write # required for npm OIDC trusted publishing + provenance
+      # id-token: write powers both npm OIDC trusted publishing (+ provenance)
+      # and MCP Registry `login github-oidc` — no secrets needed for either.
+      id-token: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -74,16 +76,18 @@ jobs:
       # OIDC trusted publishing needs npm >= 11.5.1; Node's bundled npm may be older.
       - run: npm install -g npm@latest
       - run: npm ci
+
+      # --- npm ---
       # Skip (don't fail) when package.json version is already on npm — lets
       # non-version-bump merges to main pass clean. Publish only on a new version.
-      - name: Check whether this version is already published
+      - name: Check whether this version is already on npm
         id: check
         run: |
           NAME=$(node -p "require('./package.json').name")
           LOCAL=$(node -p "require('./package.json').version")
           REMOTE=$(npm view "$NAME@$LOCAL" version 2>/dev/null || true)
           if [ "$REMOTE" = "$LOCAL" ]; then
-            echo "v$LOCAL already on npm — skipping publish."
+            echo "v$LOCAL already on npm — skipping npm publish."
             echo "publish=false" >> "$GITHUB_OUTPUT"
           else
             echo "v$LOCAL not on npm — will publish."
@@ -91,6 +95,52 @@ jobs:
           fi
       # No token: authenticates via OIDC. prepublishOnly runs the build.
       # Provenance is generated automatically under trusted publishing.
-      - name: Publish
+      - name: Publish to npm
         if: steps.check.outputs.publish == 'true'
         run: npm publish --access public
+
+      # --- MCP Registry ---
+      # Guarded independently of the npm step so a run that published to npm but
+      # failed at the registry self-heals on the next push (npm step then skips,
+      # this one still runs). The registry verifies the mcpName marker against the
+      # already-published npm package, so npm must land first (it just did, or was
+      # already there).
+      - name: Check whether this version is already in the MCP Registry
+        id: check_registry
+        run: |
+          MCP_NAME=$(node -p "require('./package.json').mcpName")
+          LOCAL=$(node -p "require('./package.json').version")
+          REG=$(curl -sf "https://registry.modelcontextprotocol.io/v0.1/servers?search=$MCP_NAME" \
+            | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{try{const j=JSON.parse(s);const m=(j.servers||[]).find(x=>x.server&&x.server.name==='$MCP_NAME');process.stdout.write(m&&m.server.version?m.server.version:'')}catch(e){process.stdout.write('')}})")
+          if [ "$REG" = "$LOCAL" ]; then
+            echo "$MCP_NAME v$LOCAL already in the registry — skipping registry publish."
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "registry latest is '${REG:-none}', local is '$LOCAL' — will publish to registry."
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+          fi
+      # Keep server.json's version in lockstep with package.json (CI's PR
+      # version-check only guards package.json), so the registry publish can
+      # never drift from the npm release.
+      - name: Sync server.json version to package.json
+        if: steps.check_registry.outputs.publish == 'true'
+        run: |
+          node -e "const fs=require('fs'),p=require('./package.json'),s=JSON.parse(fs.readFileSync('server.json','utf8'));s.version=p.version;if(Array.isArray(s.packages))s.packages.forEach(k=>{if(k.identifier===p.name)k.version=p.version});fs.writeFileSync('server.json',JSON.stringify(s,null,2)+'\n')"
+      - name: Install mcp-publisher
+        if: steps.check_registry.outputs.publish == 'true'
+        run: curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+      # OIDC auth works because this repo's owner (rbsoftwaresystems) matches the
+      # io.github.rbsoftwaresystems/ namespace of the server name.
+      - name: Authenticate to the MCP Registry (OIDC)
+        if: steps.check_registry.outputs.publish == 'true'
+        run: ./mcp-publisher login github-oidc
+      # Retry to absorb npm CDN propagation lag right after publishing the package.
+      - name: Publish to the MCP Registry
+        if: steps.check_registry.outputs.publish == 'true'
+        run: |
+          for i in 1 2 3; do
+            ./mcp-publisher publish && exit 0
+            echo "registry publish attempt $i failed; retrying in 15s..."
+            sleep 15
+          done
+          exit 1
