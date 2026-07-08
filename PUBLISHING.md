@@ -66,7 +66,7 @@ Submitting to these is what actually drives discovery — publishing to npm alon
 - **[PulseMCP](https://www.pulsemcp.com/)** — submit via their site; they crawl npm/GitHub too, but a direct submission is faster.
 - **[Smithery](https://smithery.ai/)** — has a CLI (`npx @smithery/cli install`) and a submission flow for listing your server in their registry.
 - **[Glama](https://glama.ai/mcp/servers)** — MCP server directory, submit via their site.
-- **[awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code)** — PR adding an entry under the MCP servers section.
+- **[awesome-claude-code](https://github.com/hesreallyhim/awesome-claude-code)** — no longer accepts PRs for new entries. Submit via their [issue form](https://github.com/hesreallyhim/awesome-claude-code/issues/new?template=recommend-resource.yml) instead (category: "Documentation, Knowledge & Learning" — there's no dedicated MCP-servers category).
 - **awesome-cursor** (search GitHub — several maintained lists exist) — PR adding an entry.
 - **[Cursor directory](https://cursor.directory/mcp)** — submit via their site if they take community submissions; otherwise it may pull from the official servers repo automatically.
 

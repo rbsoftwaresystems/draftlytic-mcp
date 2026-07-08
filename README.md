@@ -1,5 +1,7 @@
 # draftlytic-mcp
 
+[![smithery badge](https://smithery.ai/badge/rbsoftwaresystems/draftlytic-mcp)](https://smithery.ai/servers/rbsoftwaresystems/draftlytic-mcp)
+
 An MCP server that turns a rough project idea into a structured spec — right inside Claude Code, Cursor, or any MCP-compatible editor. No API key, no account, no network calls. It runs entirely on your machine and hands your editor's model a schema to write into, a checklist of what to ask about, a validator that catches gaps before you start coding, and a renderer that turns the result into a clean Markdown PRD.
 
 This exists because "vibe coding" from a one-line prompt tends to produce a plausible-looking app that's missing half the decisions you actually needed to make — what's in scope for v1, what the data model looks like, what "done" means for a feature. draftlytic-mcp doesn't generate any of that for you; it structures the conversation so your model asks the right questions, then checks its own homework before you start building.
