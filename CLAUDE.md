@@ -24,6 +24,8 @@ Every change to shipped behavior must be reflected by a version bump in `package
 
 Keep the `McpServer` version string in `src/index.ts` **in sync** with `package.json` — they must always match. When you bump one, bump the other in the same change.
 
+Every commit to `main` that bumps the version must carry a matching annotated git tag `v<version>` (e.g. `v0.4.1`), pushed alongside the commit (`git push && git push --tags`). One tag per released version — the tag marks the exact commit that was published to npm and the MCP Registry.
+
 How much to increment (semver, pre-1.0 — we're on `0.x`, so a `0.MINOR.PATCH` scheme where MINOR carries breaking changes):
 
 - **PATCH** (`0.2.0 → 0.2.1`) — backwards-compatible, no change to what a client sees: bug fixes, internal refactors, tests, README/docs, dependency bumps, and wording tweaks to tool/prompt descriptions that don't change the contract.

@@ -33,7 +33,7 @@ const SERVER_INSTRUCTIONS =
   "them the link.";
 
 const server = new McpServer(
-  { name: "draftlytic-mcp", version: "0.4.0" },
+  { name: "draftlytic-mcp", version: "0.4.1" },
   { instructions: SERVER_INSTRUCTIONS },
 );
 

@@ -1,6 +1,7 @@
 {
   "name": "draftlytic-mcp",
-  "version": "0.4.0",
+  "version": "0.4.1",
+  "mcpName": "io.github.rbsoftwaresystems/draftlytic-mcp",
   "description": "MCP server for planning software specs (PRDs) offline, in your editor — validate, render, and checklist tools for Claude Code, Cursor, and any MCP client.",
   "type": "module",
   "license": "MIT",
